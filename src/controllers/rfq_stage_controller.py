@@ -139,6 +139,10 @@ class RfqStageController:
         stage = self._get_stage_or_404(rfq_id, stage_id)
         rfq = self.rfq_ds.get_by_id(rfq_id)
 
+        # Step 1.5 — Validate stage is the current active stage
+        if str(stage.id) != str(rfq.current_stage_id):
+            raise ConflictError(f"Only the current active stage can be advanced. (Requested: {stage.id}, Current: {rfq.current_stage_id})")
+
         # Step 2 — Check blockers
         self._check_blockers(stage)
 
