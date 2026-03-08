@@ -31,6 +31,10 @@ class NotificationService:
         completed = 0
 
         for reminder in due_reminders:
+            # 0. Check daily rate limit to prevent spam
+            if reminder.last_sent_at and reminder.last_sent_at.date() == today:
+                continue
+
             # 1. Mock sending logic
             recipient = reminder.assigned_to or "Unassigned"
             logger.info(f"Sending reminder [{reminder.type}]: '{reminder.message}' to {recipient}")
@@ -44,8 +48,10 @@ class NotificationService:
             if reminder.send_count >= max_sends:
                 reminder.status = "sent"  # terminal state
                 completed += 1
-            else:
+            elif reminder.due_date < today:
                 reminder.status = "overdue"
+            else:
+                reminder.status = "open"  # preserve non-late status if due today
 
         self.session.commit()
         return {"processed_count": processed, "completed_count": completed}

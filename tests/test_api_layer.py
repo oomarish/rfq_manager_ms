@@ -19,6 +19,10 @@ class MockRfqController:
             "size": kwargs.get("size", 20)
         }
 
+    def export_csv(self, **kwargs):
+        self.last_kwargs = kwargs
+        return "RFQ Code,Name\r\nIF-001,Pump Package"
+
 mock_ctrl = MockRfqController()
 
 def override_get_rfq_controller():
@@ -71,6 +75,17 @@ def test_rich_filters_parsing():
     assert filters["created_after"] == "2023-01-01"
     assert filters["created_before"] == "2023-12-31"
     assert filters["search"] == "Pump"
+
+def test_export_csv_endpoint():
+    """Verify that the GET /rfqs/export natively returns CSV files and attachment headers"""
+    response = client.get("/rfq-manager/v1/rfqs/export?status=Submitted")
+    
+    assert response.status_code == 200
+    # Allow for optional charset=utf-8 which FastAPI injects
+    assert "text/csv" in response.headers["content-type"]
+    assert "attachment; filename" in response.headers["content-disposition"]
+    assert "rfqs_export.csv" in response.headers["content-disposition"]
+    assert "RFQ Code,Name" in response.text
 
 # Clean up override
 def teardown_module():

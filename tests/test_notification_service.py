@@ -27,9 +27,9 @@ def test_process_due_reminders():
     assert res["processed_count"] == 2
     assert res["completed_count"] == 1 # r2 reached 3 sends
     
-    # Check r1
+    # Check r1 (Due today! Should stay open, not transition to overdue)
     assert r1.send_count == 1
-    assert r1.status == "overdue" # properly transitioned
+    assert r1.status == "open"
     assert isinstance(r1.last_sent_at, datetime)
     
     # Check r2
@@ -38,3 +38,14 @@ def test_process_due_reminders():
     assert isinstance(r2.last_sent_at, datetime)
     
     assert session.committed is True
+
+def test_process_due_reminders_rate_limiting():
+    # Sent today, should be completely blocked by rate limit gate
+    r1 = Reminder(status="open", due_date=date.today() - timedelta(days=2), message="Test 1", assigned_to="U1", send_count=1, type="internal", last_sent_at=datetime.now())
+    
+    session = MockSession([r1])
+    svc = NotificationService(session)
+    res = svc.process_due_reminders(max_sends=3)
+    
+    assert res["processed_count"] == 0
+    assert r1.send_count == 1

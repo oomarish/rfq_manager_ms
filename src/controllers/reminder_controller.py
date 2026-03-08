@@ -56,7 +56,7 @@ class ReminderController:
         return reminder_translator.rule_to_response(rule)
 
     def test_email(self):
-        """V1: log-only. Real email integration comes with rfq_communication_ms."""
+        """V1: outbound delivery is stubbed to logger. Reminder ownership remains inside rfq_manager_ms."""
         logger.info("TEST EMAIL: Would send test reminder email to current user")
         return {"message": "Test email logged (V1 — no actual send)"}
 

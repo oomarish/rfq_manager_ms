@@ -55,7 +55,12 @@ class RfqDatasource:
             query = query.filter(RFQ.created_at >= created_after)
 
         if created_before:
-            query = query.filter(RFQ.created_at <= created_before)
+            from datetime import date as _date, datetime as _datetime, timedelta
+            if isinstance(created_before, (_datetime, _date)):
+                next_day = created_before + timedelta(days=1)
+                query = query.filter(RFQ.created_at < next_day)
+            else:
+                query = query.filter(RFQ.created_at <= created_before)
 
         if search:
             search_term = f"%{search}%"
